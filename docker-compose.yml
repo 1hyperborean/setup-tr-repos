@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16
+    container_name: shared_db
+    restart: always
+    environment:
+      POSTGRES_USER: tr2ge
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: app_db
+    volumes:
+      - ./migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"

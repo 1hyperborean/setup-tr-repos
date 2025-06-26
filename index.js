@@ -59,8 +59,6 @@ const getProjectFolders = () => {
     .filter((entry) => entry.isDirectory())
     .map((dir) => dir.name);
 
-  console.log(directories);
-
   return directories;
 };
 
@@ -141,6 +139,35 @@ const ensureGlobalCLIs = () => {
   }
 };
 
+const checkDockerAccess = () => {
+  const result = spawnSync("docker", ["info"], {
+    stdio: "inherit",
+    shell: true,
+  });
+
+  if (result.status !== 0) {
+    console.error("❌ You don't have permission to run Docker. Try:");
+    console.error("   sudo usermod -aG docker $USER && newgrp docker");
+    process.exit(1);
+  }
+};
+
+const startDatabase = () => {
+  console.log("🚀 Starting database with Docker...");
+
+  const result = spawnSync("docker compose", ["up", "-d"], {
+    cwd: path.join(__dirname, ""),
+    stdio: "inherit",
+    shell: true,
+  });
+
+  if (result.status !== 0) {
+    console.error("❌ Failed to start database with Docker Compose.");
+    console.error("Error output:", result);
+    throw new Error("Failed to start Docker Compose.");
+  }
+};
+
 const setup = () => {
   return new Promise((resolve, reject) => {
     resolve();
@@ -148,8 +175,10 @@ const setup = () => {
 };
 
 setup()
-  .then(() => ensureGlobalCLIs())
-  .then(() => getProjects())
-  .then(() => installDependencies())
-  .then(() => runProjects())
+  .then(checkDockerAccess)
+  .then(ensureGlobalCLIs)
+  .then(startDatabase)
+  .then(getProjects)
+  .then(installDependencies)
+  .then(runProjects)
   .catch((err) => console.error("❌ Setup failed:", err));
