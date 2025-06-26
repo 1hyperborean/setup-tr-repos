@@ -2,6 +2,7 @@ const simpleGit = require("simple-git");
 const path = require("path");
 const fs = require("fs");
 const { spawn, spawnSync } = require("child_process");
+const os = require("os");
 
 const git = simpleGit();
 
@@ -15,6 +16,7 @@ const startCommands = {
   client: "npm run dev",
   admin: "npm run dev",
 };
+const urls = ["http://localhost:5173", "http://localhost:8000"];
 
 const basePath = path.resolve(__dirname, "projects");
 
@@ -168,6 +170,27 @@ const startDatabase = () => {
   }
 };
 
+function getOpenCommand(url) {
+  const platform = os.platform();
+
+  if (platform === "darwin") return `open "${url}"`;
+  if (platform === "win32") return `start "" "${url}"`;
+  return `xdg-open "${url}"`;
+}
+
+const openAll = () => {
+  urls.forEach((url) => {
+    const command = getOpenCommand(url);
+    exec(command, (err) => {
+      if (err) {
+        console.error(`❌ Failed to open ${url}:`, err);
+      } else {
+        console.log(`✅ Opened ${url}`);
+      }
+    });
+  });
+};
+
 const setup = () => {
   return new Promise((resolve, reject) => {
     resolve();
@@ -181,4 +204,5 @@ setup()
   .then(getProjects)
   .then(installDependencies)
   .then(runProjects)
+  .then(openAll)
   .catch((err) => console.error("❌ Setup failed:", err));
